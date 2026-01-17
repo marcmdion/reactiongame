@@ -65,6 +65,12 @@
             margin-bottom: 1.5rem;
             background: #0F172A;
             position: relative;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        #canvas-container:active {
+            transform: scale(0.99);
         }
 
         #game-canvas {
@@ -297,11 +303,10 @@
             </div>
 
             <div class="instructions">
-                <strong>How to play:</strong> Click Start and wait for the 3D shape to change. Click as quickly as possible when you see the change. The game will wait 1-5 seconds before showing the stimulus to prevent anticipation.
+                <strong>How to play:</strong> Click the 3D scene to start, then wait for the shape to change to green. Click again as quickly as possible when you see the change. The game will wait 1-5 seconds before showing the stimulus to prevent anticipation.
             </div>
 
             <div class="controls">
-                <button class="btn-start" id="start-btn">Start Game</button>
                 <button class="btn-reset" id="reset-btn">Reset Stats</button>
             </div>
 
@@ -524,14 +529,24 @@
             }
 
             initEventListeners() {
-                document.getElementById('start-btn').addEventListener('click', () => this.startGame());
                 document.getElementById('reset-btn').addEventListener('click', () => this.resetStats());
                 document.getElementById('canvas-container').addEventListener('click', () => this.handleCanvasClick());
             }
 
+            handleCanvasClick() {
+                if (this.state === GameState.IDLE) {
+                    // Start the game
+                    this.startGame();
+                } else if (this.state === GameState.WAITING) {
+                    // False start
+                    this.handleFalseStart();
+                } else if (this.state === GameState.READY) {
+                    // Valid reaction
+                    this.recordReaction();
+                }
+            }
+
             startGame() {
-                if (this.state !== GameState.IDLE) return;
-                
                 this.hideError();
                 this.hideResult();
                 this.state = GameState.WAITING;
@@ -554,7 +569,10 @@
             }
 
             handleCanvasClick() {
-                if (this.state === GameState.WAITING) {
+                if (this.state === GameState.IDLE) {
+                    // Start the game
+                    this.startGame();
+                } else if (this.state === GameState.WAITING) {
                     // False start
                     this.handleFalseStart();
                 } else if (this.state === GameState.READY) {
@@ -610,28 +628,21 @@
             }
 
             updateUI() {
-                const startBtn = document.getElementById('start-btn');
                 const statusText = document.getElementById('status-text');
                 const statusSubtext = document.getElementById('status-subtext');
                 
                 switch(this.state) {
                     case GameState.IDLE:
-                        startBtn.disabled = false;
-                        startBtn.textContent = 'Start Game';
                         statusText.textContent = 'Ready';
                         statusText.style.color = '#3B82F6';
-                        statusSubtext.textContent = 'Click Start to begin';
+                        statusSubtext.textContent = 'Click to start';
                         break;
                     case GameState.WAITING:
-                        startBtn.disabled = true;
-                        startBtn.textContent = 'Waiting...';
                         statusText.textContent = 'Wait...';
                         statusText.style.color = '#F59E0B';
                         statusSubtext.textContent = 'Get ready for the change';
                         break;
                     case GameState.READY:
-                        startBtn.disabled = true;
-                        startBtn.textContent = 'Click Now!';
                         statusText.textContent = 'Click Now!';
                         statusText.style.color = '#10B981';
                         statusSubtext.textContent = 'React as fast as you can!';
